@@ -459,7 +459,7 @@ export class World {
     // Toutes les 100 ticks pour ne pas être trop brutal
     if (this.tick % 100 === 0 && livingCount > 20) {
       const counts = this._countBySpecies();
-      const threshold = livingCount * 0.40;
+      const threshold = livingCount * 0.35;
       Object.entries(counts).forEach(([sp, count]) => {
         if (count > threshold) {
           // Tuer aléatoirement des individus de cette espèce jusqu'à revenir sous le seuil
@@ -467,7 +467,7 @@ export class World {
           const candidates = this.creatures.filter(c => !c.dead && c.genes.speciesName === sp);
           // Tuer les moins énergétiques en premier
           candidates.sort((a, b) => a.energy - b.energy);
-          candidates.slice(0, Math.min(excess, Math.ceil(excess * 0.3))).forEach(c => {
+          candidates.slice(0, Math.min(excess, Math.ceil(excess * 0.7))).forEach(c => {
             c.dead = true;
             c.deathTick = this.tick;
             c.deathCause = "overcrowding";
