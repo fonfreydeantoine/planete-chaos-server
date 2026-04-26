@@ -22,7 +22,7 @@ const SIM_INTERVAL_MS = 50;           // 20 ticks/seconde
 // ============================================================
 const world = new World();
 
-if (false && existsSync(SAVE_FILE)) {
+if (existsSync(SAVE_FILE)) {
   try {
     const raw = readFileSync(SAVE_FILE, "utf-8");
     world.load(JSON.parse(raw));
