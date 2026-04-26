@@ -41,13 +41,13 @@ const PREDATION_PROTECTION_THRESHOLD = 12;
 // ============================================================
 const BASE_SPECIES = {
   // Alpha : la tortue — longévité maximale, métabolisme très économe,
-  // reproduction lente mais stable. Résiste aux crises par son endurance.
+  // reproduction très rare. Résiste aux crises mais ne peut pas dominer.
   Alpha: {
     name: "Alpha",
     hue: 200,
-    size: [4, 6], speed: [0.2, 0.5], metabolism: [0.35, 0.55],
+    size: [5, 8], speed: [0.2, 0.5], metabolism: [0.35, 0.55],
     limbCount: [3, 4], limbLength: [14, 22], maxAge: [5000, 9000],
-    fertility: [0.6, 1.0], reproThreshold: [80, 110], baseEnergy: [130, 170],
+    fertility: [0.2, 0.4], reproThreshold: [140, 180], baseEnergy: [130, 170],
     isPredator: false, preyOf: ["Gamma"],
   },
   // Bêta : le feu de paille — ultra rapide, se reproduit vite,
@@ -181,7 +181,7 @@ function mutateGenes(g, rng, partnerGenes = null) {
   const pg = partnerGenes;
   return {
     speciesName,
-hue: (hue + (rng() - 0.5) * 60 + 360) % 360,
+    hue: (hue + (rng() - 0.5) * 20 + 360) % 360,
     saturation: clamp(g.saturation + (rng() - 0.5) * 0.1, 0.4, 1),
     lightness: clamp(g.lightness + (rng() - 0.5) * 0.1, 0.3, 0.8),
     size: m(pg ? lerp(g.size, pg.size, rng()) : g.size, 0.5, 1.2, 13),
