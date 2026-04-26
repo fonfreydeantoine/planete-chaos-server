@@ -40,44 +40,54 @@ const PREDATION_PROTECTION_THRESHOLD = 12;
 // ESPÈCES DE BASE
 // ============================================================
 const BASE_SPECIES = {
+  // Alpha : la tortue — longévité maximale, métabolisme très économe,
+  // reproduction lente mais stable. Résiste aux crises par son endurance.
   Alpha: {
     name: "Alpha",
     hue: 200,
-    size: [4, 7], speed: [0.2, 0.6], metabolism: [0.5, 0.8],
-    limbCount: [3, 4], limbLength: [14, 22], maxAge: [3000, 5000],
-    fertility: [0.8, 1.2], reproThreshold: [60, 90], baseEnergy: [90, 130],
+    size: [4, 6], speed: [0.2, 0.5], metabolism: [0.35, 0.55],
+    limbCount: [3, 4], limbLength: [14, 22], maxAge: [5000, 9000],
+    fertility: [0.4, 0.7], reproThreshold: [100, 130], baseEnergy: [130, 170],
     isPredator: false, preyOf: ["Gamma"],
   },
+  // Bêta : le feu de paille — ultra rapide, se reproduit vite,
+  // brûle vite. Explose en population puis s'effondre cycliquement.
   Beta: {
     name: "Bêta",
     hue: 45,
-    size: [2, 3.5], speed: [1.2, 2.0], metabolism: [1.0, 1.6],
-    limbCount: [2, 2], limbLength: [8, 14], maxAge: [1200, 2500],
-    fertility: [1.0, 1.6], reproThreshold: [55, 80], baseEnergy: [70, 100],
+    size: [1.8, 3], speed: [1.4, 2.2], metabolism: [1.5, 2.0],
+    limbCount: [2, 2], limbLength: [6, 12], maxAge: [600, 1200],
+    fertility: [1.8, 2.8], reproThreshold: [35, 55], baseEnergy: [50, 75],
     isPredator: false, preyOf: ["Gamma"],
   },
+  // Gamma : le lion — prédateur puissant, très peu fertile,
+  // régule les autres espèces. Sa survie dépend de la abondance de ses proies.
   Gamma: {
     name: "Gamma",
     hue: 0,
-    size: [7, 11], speed: [0.3, 0.7], metabolism: [1.2, 1.8],
-    limbCount: [2, 3], limbLength: [18, 28], maxAge: [4000, 7000],
-    fertility: [0.3, 0.6], reproThreshold: [100, 140], baseEnergy: [120, 180],
+    size: [8, 12], speed: [0.6, 1.1], metabolism: [1.0, 1.4],
+    limbCount: [2, 3], limbLength: [20, 30], maxAge: [5000, 8000],
+    fertility: [0.2, 0.4], reproThreshold: [130, 160], baseEnergy: [150, 200],
     isPredator: true, preyOf: [],
   },
+  // Delta : le plancton — minuscule, prolifique, éphémère.
+  // Population explosive mais très vulnérable. Nourriture idéale pour Gamma.
   Delta: {
     name: "Delta",
     hue: 140,
-    size: [1.5, 2.8], speed: [0.6, 1.2], metabolism: [0.6, 1.0],
-    limbCount: [2, 3], limbLength: [5, 10], maxAge: [800, 1800],
-    fertility: [1.4, 2.2], reproThreshold: [45, 65], baseEnergy: [60, 90],
+    size: [1.2, 2.2], speed: [0.8, 1.4], metabolism: [0.8, 1.2],
+    limbCount: [2, 3], limbLength: [4, 8], maxAge: [400, 900],
+    fertility: [2.2, 3.0], reproThreshold: [28, 45], baseEnergy: [40, 65],
     isPredator: false, preyOf: ["Gamma"],
   },
+  // Epsilon : la sage — métabolisme élevé mais fertilité bridée.
+  // Niche intermédiaire, ni dominante ni vulnérable.
   Epsilon: {
     name: "Epsilon",
     hue: 280,
-    size: [3, 5.5], speed: [0.5, 1.0], metabolism: [0.8, 1.2],
-    limbCount: [2, 4], limbLength: [10, 18], maxAge: [2000, 4000],
-    fertility: [0.8, 1.4], reproThreshold: [70, 100], baseEnergy: [80, 120],
+    size: [3, 5], speed: [0.5, 0.9], metabolism: [1.1, 1.5],
+    limbCount: [2, 4], limbLength: [10, 16], maxAge: [1500, 3000],
+    fertility: [0.5, 0.9], reproThreshold: [90, 120], baseEnergy: [90, 120],
     isPredator: false, preyOf: ["Gamma"],
   },
 };
@@ -234,21 +244,13 @@ class Creature {
       if (n.dead) return;
       const dx = n.x - this.x, dy = n.y - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-if (dist < 2 || dist > 80) return;
+      if (dist < 2 || dist > 180) return;
 
       const myKey = BASE_SPECIES[this.genes.speciesName] ? this.genes.speciesName : (this.genes.parentSpecies?.[0] ?? "Epsilon");
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
-// Répulsion forte à très courte distance, attraction légère à distance moyenne
-let force;
-if (dist < 20) {
-  force = -2.0 / dist; // toujours répulsif quand trop proches
-} else {
-  force = affinity / (dist * 0.25);
-}
-socialX += (dx / dist) * force;
-socialY += (dy / dist) * force;
+      const force = affinity / (dist * 0.015);
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
