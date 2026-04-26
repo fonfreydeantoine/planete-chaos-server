@@ -455,6 +455,27 @@ export class World {
       living.slice(0, 3).forEach(c => { c.dead = true; c.deathTick = this.tick; c.deathCause = "age"; });
     }
 
+    // Régulation density-dependent : aucune espèce ne peut dépasser 40% de la population
+    // Toutes les 100 ticks pour ne pas être trop brutal
+    if (this.tick % 100 === 0 && livingCount > 20) {
+      const counts = this._countBySpecies();
+      const threshold = livingCount * 0.40;
+      Object.entries(counts).forEach(([sp, count]) => {
+        if (count > threshold) {
+          // Tuer aléatoirement des individus de cette espèce jusqu'à revenir sous le seuil
+          const excess = Math.floor(count - threshold);
+          const candidates = this.creatures.filter(c => !c.dead && c.genes.speciesName === sp);
+          // Tuer les moins énergétiques en premier
+          candidates.sort((a, b) => a.energy - b.energy);
+          candidates.slice(0, Math.min(excess, Math.ceil(excess * 0.3))).forEach(c => {
+            c.dead = true;
+            c.deathTick = this.tick;
+            c.deathCause = "overcrowding";
+          });
+        }
+      });
+    }
+
     if (this.events.length > 20) this.events = this.events.slice(-20);
 
     // Réapparition de Gamma si extinction totale des prédateurs
