@@ -47,7 +47,7 @@ const BASE_SPECIES = {
     hue: 200,
     size: [4, 6], speed: [0.2, 0.5], metabolism: [0.35, 0.55],
     limbCount: [3, 4], limbLength: [14, 22], maxAge: [5000, 9000],
-    fertility: [0.4, 0.7], reproThreshold: [100, 130], baseEnergy: [130, 170],
+    fertility: [0.6, 1.0], reproThreshold: [80, 110], baseEnergy: [130, 170],
     isPredator: false, preyOf: ["Gamma"],
   },
   // Bêta : le feu de paille — ultra rapide, se reproduit vite,
@@ -57,17 +57,17 @@ const BASE_SPECIES = {
     hue: 45,
     size: [1.8, 3], speed: [1.4, 2.2], metabolism: [1.5, 2.0],
     limbCount: [2, 2], limbLength: [6, 12], maxAge: [600, 1200],
-    fertility: [1.8, 2.8], reproThreshold: [35, 55], baseEnergy: [50, 75],
+    fertility: [2.0, 3.0], reproThreshold: [28, 45], baseEnergy: [50, 75],
     isPredator: false, preyOf: ["Gamma"],
   },
   // Gamma : le lion — prédateur puissant, très peu fertile,
-  // régule les autres espèces. Sa survie dépend de la abondance de ses proies.
+  // régule les autres espèces. Sa survie dépend de l'abondance de ses proies.
   Gamma: {
     name: "Gamma",
     hue: 0,
     size: [8, 12], speed: [0.6, 1.1], metabolism: [1.0, 1.4],
     limbCount: [2, 3], limbLength: [20, 30], maxAge: [5000, 8000],
-    fertility: [0.2, 0.4], reproThreshold: [130, 160], baseEnergy: [150, 200],
+    fertility: [0.12, 0.25], reproThreshold: [150, 180], baseEnergy: [150, 200],
     isPredator: true, preyOf: [],
   },
   // Delta : le plancton — minuscule, prolifique, éphémère.
@@ -77,7 +77,7 @@ const BASE_SPECIES = {
     hue: 140,
     size: [1.2, 2.2], speed: [0.8, 1.4], metabolism: [0.8, 1.2],
     limbCount: [2, 3], limbLength: [4, 8], maxAge: [400, 900],
-    fertility: [2.2, 3.0], reproThreshold: [28, 45], baseEnergy: [40, 65],
+    fertility: [2.5, 3.5], reproThreshold: [22, 38], baseEnergy: [40, 65],
     isPredator: false, preyOf: ["Gamma"],
   },
   // Epsilon : la sage — métabolisme élevé mais fertilité bridée.
@@ -87,7 +87,7 @@ const BASE_SPECIES = {
     hue: 280,
     size: [3, 5], speed: [0.5, 0.9], metabolism: [1.1, 1.5],
     limbCount: [2, 4], limbLength: [10, 16], maxAge: [1500, 3000],
-    fertility: [0.5, 0.9], reproThreshold: [90, 120], baseEnergy: [90, 120],
+    fertility: [0.6, 1.0], reproThreshold: [75, 100], baseEnergy: [90, 120],
     isPredator: false, preyOf: ["Gamma"],
   },
 };
