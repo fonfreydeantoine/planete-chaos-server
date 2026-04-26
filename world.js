@@ -235,7 +235,7 @@ class Creature {
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
-      const force = affinity / (dist * 0.015);
+const force = affinity / (dist * 0.06);
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
@@ -306,7 +306,7 @@ class Creature {
 
     const myKey = BASE_SPECIES[this.genes.speciesName] ? this.genes.speciesName : (this.genes.parentSpecies?.[0] ?? "Epsilon");
     const weights = candidates.map(n => {
-      if (this.genes.speciesName === n.genes.speciesName) return 3.0;
+if (this.genes.speciesName === n.genes.speciesName) return 6.0;
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       return Math.max(0.05, 0.5 + (affinities[myKey]?.[theirKey] ?? 0) * 0.5);
     });
