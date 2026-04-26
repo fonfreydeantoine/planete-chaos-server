@@ -240,7 +240,15 @@ if (dist < 2 || dist > 80) return;
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
-const force = affinity / (dist * 0.25);
+// Répulsion forte à très courte distance, attraction légère à distance moyenne
+let force;
+if (dist < 20) {
+  force = -2.0 / dist; // toujours répulsif quand trop proches
+} else {
+  force = affinity / (dist * 0.25);
+}
+socialX += (dx / dist) * force;
+socialY += (dy / dist) * force;
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
