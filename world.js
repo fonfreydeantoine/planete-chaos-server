@@ -30,7 +30,7 @@ function hashStr(str) {
 // ============================================================
 export const WORLD_BIRTH = new Date("2026-04-26T14:16:00Z").getTime();
 const WORLD_SEED = "planete-chaos-v1";
-const MAX_CREATURES = 300;
+const MAX_CREATURES = 200;
 const WORLD_WIDTH = 1280;
 const WORLD_HEIGHT = 800;
 
@@ -265,7 +265,7 @@ export class World {
     if (this.creatures.length > MAX_CREATURES) {
       const living = this.creatures.filter(c => !c.dead);
       living.sort((a, b) => b.age - a.age);
-      const toKill = living.slice(0, Math.floor(living.length * 0.12));
+const toKill = living.slice(0, 3);
       toKill.forEach(c => {
         c.dead = true;
         c.deathTick = this.tick;
