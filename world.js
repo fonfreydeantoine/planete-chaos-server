@@ -234,13 +234,13 @@ class Creature {
       if (n.dead) return;
       const dx = n.x - this.x, dy = n.y - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 2 || dist > 180) return;
+if (dist < 2 || dist > 80) return;
 
       const myKey = BASE_SPECIES[this.genes.speciesName] ? this.genes.speciesName : (this.genes.parentSpecies?.[0] ?? "Epsilon");
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
-      const force = affinity / (dist * 0.015);
+const force = affinity / (dist * 0.25);
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
