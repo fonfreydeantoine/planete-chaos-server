@@ -152,11 +152,16 @@ function mutateGenes(g, rng, partnerGenes = null) {
 
   if (partnerGenes && partnerGenes.speciesName !== g.speciesName) {
     hybridDepth = Math.max(g.hybridDepth ?? 0, partnerGenes.hybridDepth ?? 0) + 1;
-    const nameA = g.speciesName;
-    const nameB = partnerGenes.speciesName;
-    const halfA = nameA.slice(0, Math.ceil(nameA.length / 2));
-    const halfB = nameB.slice(Math.floor(nameB.length / 2)).toLowerCase();
-    speciesName = halfA + halfB;
+    if (hybridDepth >= 3) {
+      speciesName = (g.hybridDepth ?? 0) <= (partnerGenes.hybridDepth ?? 0)
+        ? g.speciesName : partnerGenes.speciesName;
+    } else {
+      const nameA = g.speciesName;
+      const nameB = partnerGenes.speciesName;
+      const halfA = nameA.slice(0, Math.ceil(nameA.length / 2));
+      const halfB = nameB.slice(Math.floor(nameB.length / 2)).toLowerCase();
+      speciesName = halfA + halfB;
+    }
     hue = lerp(g.hue, partnerGenes.hue, 0.5) + (rng() - 0.5) * 15;
     if (g.isPredator || partnerGenes.isPredator) isPredator = rng() < 0.3;
     preyOf = [...new Set([...preyOf, ...(partnerGenes.preyOf ?? [])])];
@@ -235,7 +240,7 @@ class Creature {
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
-const force = affinity / (dist * 0.06);
+      const force = affinity / (dist * 0.015);
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
@@ -306,7 +311,7 @@ const force = affinity / (dist * 0.06);
 
     const myKey = BASE_SPECIES[this.genes.speciesName] ? this.genes.speciesName : (this.genes.parentSpecies?.[0] ?? "Epsilon");
     const weights = candidates.map(n => {
-if (this.genes.speciesName === n.genes.speciesName) return 6.0;
+      if (this.genes.speciesName === n.genes.speciesName) return 3.0;
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
       return Math.max(0.05, 0.5 + (affinities[myKey]?.[theirKey] ?? 0) * 0.5);
     });
