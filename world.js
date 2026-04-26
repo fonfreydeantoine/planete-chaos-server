@@ -181,7 +181,7 @@ function mutateGenes(g, rng, partnerGenes = null) {
   const pg = partnerGenes;
   return {
     speciesName,
-    hue: (hue + (rng() - 0.5) * 20 + 360) % 360,
+hue: (hue + (rng() - 0.5) * 60 + 360) % 360,
     saturation: clamp(g.saturation + (rng() - 0.5) * 0.1, 0.4, 1),
     lightness: clamp(g.lightness + (rng() - 0.5) * 0.1, 0.3, 0.8),
     size: m(pg ? lerp(g.size, pg.size, rng()) : g.size, 0.5, 1.2, 13),
