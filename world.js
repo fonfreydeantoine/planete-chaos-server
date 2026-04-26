@@ -248,13 +248,15 @@ class Creature {
 
       const myKey = BASE_SPECIES[this.genes.speciesName] ? this.genes.speciesName : (this.genes.parentSpecies?.[0] ?? "Epsilon");
       const theirKey = BASE_SPECIES[n.genes.speciesName] ? n.genes.speciesName : (n.genes.parentSpecies?.[0] ?? "Epsilon");
-      let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
+let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
 
       const force = affinity / (dist * 0.015);
       socialX += (dx / dist) * force;
       socialY += (dy / dist) * force;
 
-      if (this.genes.isPredator && n.genes.preyOf?.includes(myKey)) {
+let affinity = this.genes.speciesName === n.genes.speciesName ? 0.5 : (affinities[myKey]?.[theirKey] ?? 0);
+// Fuite forte face aux prédateurs
+if (!this.genes.isPredator && n.genes.isPredator) affinity = -3.0;
         const preyCount = speciesCounts[n.genes.speciesName] ?? 0;
         if (preyCount > PREDATION_PROTECTION_THRESHOLD && dist < closestPreyDist) {
           closestPreyDist = dist;
