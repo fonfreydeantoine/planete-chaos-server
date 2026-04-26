@@ -67,7 +67,7 @@ const BASE_SPECIES = {
     hue: 0,
     size: [8, 12], speed: [0.6, 1.1], metabolism: [1.0, 1.4],
     limbCount: [2, 3], limbLength: [20, 30], maxAge: [5000, 8000],
-    fertility: [0.12, 0.25], reproThreshold: [150, 180], baseEnergy: [150, 200],
+    fertility: [0.25, 0.45], reproThreshold: [120, 145], baseEnergy: [150, 200],
     isPredator: true, preyOf: [],
   },
   // Delta : le plancton — minuscule, prolifique, éphémère.
@@ -456,6 +456,25 @@ export class World {
     }
 
     if (this.events.length > 20) this.events = this.events.slice(-20);
+
+    // Réapparition de Gamma si extinction totale des prédateurs
+    // Toutes les 500 ticks, vérifier s'il reste des prédateurs
+    if (this.tick % 500 === 0) {
+      const hasPredator = this.creatures.some(c => !c.dead && c.genes.isPredator);
+      if (!hasPredator) {
+        const rebirthRng = mulberry32(hashStr(WORLD_SEED + "-rebirth-" + this.tick));
+        const count = 3 + Math.floor(rebirthRng() * 3);
+        for (let i = 0; i < count; i++) {
+          const x = 80 + rebirthRng() * (WORLD_WIDTH - 160);
+          const y = 80 + rebirthRng() * (WORLD_HEIGHT - 160);
+          const genes = genesFromSpecies("Gamma", rebirthRng);
+          this.creatures.push(new Creature(this.nextId++, x, y, genes, 0, null, rebirthRng, this.tick));
+          this.totalBorn++;
+        }
+        this.events.push({ tick: this.tick, type: "rebirth", message: "Gamma réapparu par mutation spontanée" });
+        console.log(`Tick ${this.tick} : Gamma réapparu (${count} individus)`);
+      }
+    }
   }
 
   save() {
