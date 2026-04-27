@@ -1,7 +1,7 @@
 /* ============================================================
-   PLANÈTE CHAOS — world.js v2
+   PLANÈTE CHAOS — world.js v3
    Système d'espèces, hybrides, affinités, prédation
-   Equilibre naturel sur le long terme
+   Régulation par lignée dominante (fixée à la naissance)
    ============================================================ */
 
 // ============================================================
@@ -35,6 +35,7 @@ const MAX_CREATURES = 220;
 const WORLD_WIDTH = 1280;
 const WORLD_HEIGHT = 800;
 const PREDATION_PROTECTION_THRESHOLD = 12;
+const LINEAGE_CAP = 0.35; // 35% max par lignée
 
 // ============================================================
 // ESPÈCES DE BASE
@@ -123,6 +124,38 @@ function lerpAngle(a, b, t) {
 function rangePick(range, rng) { return range[0] + rng() * (range[1] - range[0]); }
 
 // ============================================================
+// LIGNÉE DOMINANTE
+// Détermine une fois pour toutes à la naissance la lignée de base
+// à laquelle appartient la créature pour la régulation de population.
+//
+// Algorithme :
+//   1. Compter les occurrences de chaque espèce de base dans parentSpecies.
+//   2. En cas d'égalité, tirer au sort (rng) — résultat fixé dans les gènes.
+//   3. Les espèces pures retournent leur propre nom directement.
+// ============================================================
+function resolveDominantLineage(parentSpecies, rng) {
+  if (!parentSpecies || parentSpecies.length === 0) return "Epsilon";
+
+  // Filtrer pour ne garder que les espèces de base connues
+  const baseAncestors = parentSpecies.filter(s => BASE_SPECIES[s]);
+  if (baseAncestors.length === 0) return "Epsilon";
+  if (baseAncestors.length === 1) return baseAncestors[0];
+
+  // Compter les occurrences
+  const counts = {};
+  baseAncestors.forEach(s => { counts[s] = (counts[s] ?? 0) + 1; });
+
+  const maxCount = Math.max(...Object.values(counts));
+  const candidates = Object.keys(counts).filter(s => counts[s] === maxCount);
+
+  // Un seul candidat : pas d'ambiguïté
+  if (candidates.length === 1) return candidates[0];
+
+  // Égalité : tirage au sort déterministe via rng
+  return candidates[Math.floor(rng() * candidates.length)];
+}
+
+// ============================================================
 // GÈNES
 // ============================================================
 function genesFromSpecies(speciesName, rng) {
@@ -147,6 +180,7 @@ function genesFromSpecies(speciesName, rng) {
     isPredator: sp.isPredator,
     preyOf: [...sp.preyOf],
     parentSpecies: [speciesName],
+    dominantLineage: speciesName, // fixé à la naissance, ne change jamais
     hybridDepth: 0,
   };
 }
@@ -159,6 +193,8 @@ function mutateGenes(g, rng, partnerGenes = null) {
   let preyOf = [...(g.preyOf ?? [])];
   let parentSpecies = [...(g.parentSpecies ?? [g.speciesName])];
   let hybridDepth = g.hybridDepth ?? 0;
+  // La lignée dominante du parent est héritée par défaut (espèce pure)
+  let dominantLineage = g.dominantLineage ?? g.speciesName;
 
   if (partnerGenes && partnerGenes.speciesName !== g.speciesName) {
     hybridDepth = Math.max(g.hybridDepth ?? 0, partnerGenes.hybridDepth ?? 0) + 1;
@@ -176,6 +212,9 @@ function mutateGenes(g, rng, partnerGenes = null) {
     if (g.isPredator || partnerGenes.isPredator) isPredator = rng() < 0.3;
     preyOf = [...new Set([...preyOf, ...(partnerGenes.preyOf ?? [])])];
     parentSpecies = [...new Set([...parentSpecies, ...(partnerGenes.parentSpecies ?? [partnerGenes.speciesName])])];
+
+    // Lignée dominante calculée une fois à la naissance et fixée dans les gènes
+    dominantLineage = resolveDominantLineage(parentSpecies, rng);
   }
 
   const pg = partnerGenes;
@@ -198,6 +237,7 @@ function mutateGenes(g, rng, partnerGenes = null) {
     isPredator,
     preyOf,
     parentSpecies,
+    dominantLineage,
     hybridDepth,
   };
 }
@@ -404,6 +444,39 @@ export class World {
     return counts;
   }
 
+  // Regroupe les créatures vivantes par lignée dominante.
+  // La lignée dominante est fixée à la naissance dans genes.dominantLineage.
+  // Pour les créatures chargées depuis une ancienne sauvegarde (champ absent),
+  // on recalcule à la volée depuis parentSpecies sans RNG (premier ancêtre connu).
+  _groupByLineage() {
+    const groups = {};
+    this.creatures.forEach(c => {
+      if (c.dead) return;
+      const lineage = this._getLineage(c);
+      if (!groups[lineage]) groups[lineage] = [];
+      groups[lineage].push(c);
+    });
+    return groups;
+  }
+
+  // Retourne la lignée d'une créature.
+  // Priorité : genes.dominantLineage (fixé à la naissance).
+  // Fallback pour anciennes sauvegardes : premier ancêtre de base valide dans parentSpecies.
+  _getLineage(c) {
+    const dl = c.genes.dominantLineage;
+    if (dl && BASE_SPECIES[dl]) return dl;
+
+    // Fallback : chercher le premier ancêtre de base valide
+    const ps = c.genes.parentSpecies;
+    if (ps && ps.length > 0) {
+      const found = ps.find(s => BASE_SPECIES[s]);
+      if (found) return found;
+    }
+
+    // Dernier recours : espèce propre si c'est une base, sinon Epsilon
+    return BASE_SPECIES[c.genes.speciesName] ? c.genes.speciesName : "Epsilon";
+  }
+
   _getNeighbors(creature, radius = 200) {
     return this.creatures.filter(c => {
       if (c.id === creature.id || c.dead) return false;
@@ -455,31 +528,44 @@ export class World {
       living.slice(0, 3).forEach(c => { c.dead = true; c.deathTick = this.tick; c.deathCause = "age"; });
     }
 
-    // Régulation density-dependent : aucune espèce ne peut dépasser 40% de la population
-    // Toutes les 100 ticks pour ne pas être trop brutal
-    if (this.tick % 100 === 0 && livingCount > 20) {
-      const counts = this._countBySpecies();
-      const threshold = livingCount * 0.35;
-      Object.entries(counts).forEach(([sp, count]) => {
+    // Régulation par lignée dominante.
+    // Aucun groupe partageant une lignée dominante commune ne peut dépasser
+    // LINEAGE_CAP (35%) de la population totale.
+    // La lignée est fixée à la naissance (genes.dominantLineage) pour éviter
+    // toute dérive due à l'ordre d'accumulation de parentSpecies.
+    if (this.tick % 50 === 0 && livingCount > 20) {
+      const lineageGroups = this._groupByLineage();
+      const threshold = livingCount * LINEAGE_CAP;
+
+      Object.entries(lineageGroups).forEach(([lineage, members]) => {
+        const count = members.length;
         if (count > threshold) {
-          // Tuer aléatoirement des individus de cette espèce jusqu'à revenir sous le seuil
           const excess = Math.floor(count - threshold);
-          const candidates = this.creatures.filter(c => !c.dead && c.genes.speciesName === sp);
-          // Tuer les moins énergétiques en premier
-          candidates.sort((a, b) => a.energy - b.energy);
-          candidates.slice(0, Math.min(excess, Math.ceil(excess * 0.7))).forEach(c => {
+          if (excess <= 0) return;
+
+          // Trier : d'abord les hybrides les plus profonds (les moins "purs"),
+          // puis par énergie croissante (les plus faibles partent en premier).
+          members.sort((a, b) => {
+            const depthDiff = (b.genes.hybridDepth ?? 0) - (a.genes.hybridDepth ?? 0);
+            if (depthDiff !== 0) return depthDiff;
+            return a.energy - b.energy;
+          });
+
+          members.slice(0, excess).forEach(c => {
             c.dead = true;
             c.deathTick = this.tick;
             c.deathCause = "overcrowding";
           });
+
+          console.log(`Tick ${this.tick} : régulation lignée ${lineage} — ${count} → ${count - excess} (seuil ${Math.floor(threshold)})`);
         }
       });
     }
 
     if (this.events.length > 20) this.events = this.events.slice(-20);
 
-    // Réapparition de Gamma si extinction totale des prédateurs
-    // Toutes les 500 ticks, vérifier s'il reste des prédateurs
+    // Réapparition de Gamma si extinction totale des prédateurs.
+    // Toutes les 500 ticks, vérifier s'il reste des prédateurs.
     if (this.tick % 500 === 0) {
       const hasPredator = this.creatures.some(c => !c.dead && c.genes.isPredator);
       if (!hasPredator) {
@@ -516,6 +602,19 @@ export class World {
     this.simRng = mulberry32(hashStr(WORLD_SEED + "-sim-" + this.tick));
 
     this.creatures = data.creatures.map(d => {
+      // Migration : si dominantLineage absent (ancienne sauvegarde),
+      // on l'injecte maintenant depuis parentSpecies pour que la régulation
+      // s'applique correctement dès le redémarrage.
+      if (!d.genes.dominantLineage) {
+        const ps = d.genes.parentSpecies;
+        if (ps && ps.length > 0) {
+          const found = ps.find(s => BASE_SPECIES[s]);
+          d.genes.dominantLineage = found ?? (BASE_SPECIES[d.genes.speciesName] ? d.genes.speciesName : "Epsilon");
+        } else {
+          d.genes.dominantLineage = BASE_SPECIES[d.genes.speciesName] ? d.genes.speciesName : "Epsilon";
+        }
+      }
+
       const c = new Creature(d.id, d.x, d.y, d.genes, d.generation, d.parentId,
         mulberry32(hashStr("limb-" + d.id)), d.birthTick ?? 0);
       c.age = d.age; c.energy = d.energy; c.angle = d.angle; c.targetAngle = d.angle;
