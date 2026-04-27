@@ -545,11 +545,7 @@ export class World {
 
           // Trier : d'abord les hybrides les plus profonds (les moins "purs"),
           // puis par énergie croissante (les plus faibles partent en premier).
-          members.sort((a, b) => {
-            const depthDiff = (b.genes.hybridDepth ?? 0) - (a.genes.hybridDepth ?? 0);
-            if (depthDiff !== 0) return depthDiff;
-            return a.energy - b.energy;
-          });
+          members.sort((a, b) => a.energy - b.energy);
 
           members.slice(0, excess).forEach(c => {
             c.dead = true;
