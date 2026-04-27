@@ -564,12 +564,36 @@ export class World {
 
     if (this.events.length > 20) this.events = this.events.slice(-20);
 
-    // Réapparition de Gamma si extinction totale des prédateurs.
-    // Toutes les 500 ticks, vérifier s'il reste des prédateurs.
-    if (this.tick % 500 === 0) {
-      const hasPredator = this.creatures.some(c => !c.dead && c.genes.isPredator);
-      if (!hasPredator) {
-        const rebirthRng = mulberry32(hashStr(WORLD_SEED + "-rebirth-" + this.tick));
+    // ============================================================
+    // RÉSURRECTION ET RÉINTRODUCTION — toutes les 200 ticks
+    // ============================================================
+    if (this.tick % 200 === 0) {
+      const living = this.creatures.filter(c => !c.dead);
+      const total = living.length;
+      const rebirthRng = mulberry32(hashStr(WORLD_SEED + "-rebirth-" + this.tick));
+
+      // CAS 1 : Extinction quasi-totale (moins de 15 créatures)
+      // Réinjecter toutes les espèces de base
+      if (total < 15) {
+        const speciesNames = Object.keys(BASE_SPECIES);
+        speciesNames.forEach(sp => {
+          const count = sp === "Gamma" ? 3 : 6;
+          for (let i = 0; i < count; i++) {
+            const x = 80 + rebirthRng() * (WORLD_WIDTH - 160);
+            const y = 80 + rebirthRng() * (WORLD_HEIGHT - 160);
+            const genes = genesFromSpecies(sp, rebirthRng);
+            this.creatures.push(new Creature(this.nextId++, x, y, genes, 0, null, rebirthRng, this.tick));
+            this.totalBorn++;
+          }
+        });
+        this.events.push({ tick: this.tick, type: "rebirth", message: "Renaissance du monde après quasi-extinction" });
+        console.log(`Tick ${this.tick} : Renaissance complète du monde (total était ${total})`);
+        return;
+      }
+
+      // CAS 2 : Gamma trop rare (moins de 3 prédateurs)
+      const predatorCount = living.filter(c => c.genes.isPredator).length;
+      if (predatorCount < 3) {
         const count = 3 + Math.floor(rebirthRng() * 3);
         for (let i = 0; i < count; i++) {
           const x = 80 + rebirthRng() * (WORLD_WIDTH - 160);
@@ -578,8 +602,29 @@ export class World {
           this.creatures.push(new Creature(this.nextId++, x, y, genes, 0, null, rebirthRng, this.tick));
           this.totalBorn++;
         }
-        this.events.push({ tick: this.tick, type: "rebirth", message: "Gamma réapparu par mutation spontanée" });
-        console.log(`Tick ${this.tick} : Gamma réapparu (${count} individus)`);
+        this.events.push({ tick: this.tick, type: "rebirth", message: `Gamma réapparu par mutation (${count} individus)` });
+        console.log(`Tick ${this.tick} : Gamma réapparu — ${predatorCount} prédateurs → +${count}`);
+      }
+
+      // CAS 3 : Espèce de base sous-représentée (moins de 3% de la population)
+      // Réinjecter doucement 3 individus de cette espèce
+      if (total >= 15) {
+        const lineageGroups = this._groupByLineage();
+        const minThreshold = Math.max(3, total * 0.03);
+        Object.keys(BASE_SPECIES).forEach(sp => {
+          const count = (lineageGroups[sp] ?? []).length;
+          if (count < minThreshold) {
+            const injectCount = sp === "Gamma" ? 2 : 4;
+            for (let i = 0; i < injectCount; i++) {
+              const x = 80 + rebirthRng() * (WORLD_WIDTH - 160);
+              const y = 80 + rebirthRng() * (WORLD_HEIGHT - 160);
+              const genes = genesFromSpecies(sp, rebirthRng);
+              this.creatures.push(new Creature(this.nextId++, x, y, genes, 0, null, rebirthRng, this.tick));
+              this.totalBorn++;
+            }
+            console.log(`Tick ${this.tick} : Réintroduction ${sp} (${count} → +${injectCount})`);
+          }
+        });
       }
     }
   }
