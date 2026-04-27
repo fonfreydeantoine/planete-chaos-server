@@ -51,7 +51,9 @@ const BASE_SPECIES = {
     fertility: [0.2, 0.4], reproThreshold: [140, 180], baseEnergy: [130, 170],
     isPredator: false, preyOf: ["Gamma"],
   },
-  // Beta: {
+  // Bêta : le feu de paille — ultra rapide, se reproduit vite,
+  // brûle vite. Explose en population puis s'effondre cycliquement.
+  Beta: {
     name: "Bêta",
     hue: 45,
     size: [1.8, 3], speed: [1.4, 2.2], metabolism: [1.5, 2.0],
@@ -76,7 +78,7 @@ const BASE_SPECIES = {
     hue: 140,
     size: [1.2, 2.2], speed: [0.8, 1.4], metabolism: [0.8, 1.2],
     limbCount: [2, 3], limbLength: [4, 8], maxAge: [400, 900],
-    fertility: [1.0, 1.5], reproThreshold: [35, 50],
+    fertility: [1.0, 1.5], reproThreshold: [35, 50], baseEnergy: [40, 65],
     isPredator: false, preyOf: ["Gamma"],
   },
   // Epsilon : la sage — métabolisme élevé mais fertilité bridée.
